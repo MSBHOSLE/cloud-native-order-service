@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  order_service:
+    build: .
+    container_name: order_service_app
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - APP_NAME=Cloud-Native Order Service
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@order_postgres:5432/orders
+    depends_on:
+      order_postgres:
+        condition: service_healthy
+
+  order_postgres:
+    image: postgres:16-alpine
+    container_name: order_service_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: orders
+    ports:
+      - "5434:5432"
+    volumes:
+      - order_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d orders"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  order_pgdata:
